@@ -114,6 +114,17 @@ function MultiTrimVideo() {
     }
   };
 
+  const handleDownload = () => {
+    videoTrimmedUrls.forEach((url, index) => {
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `trimmed_segment_${index + 1}.mp4`; // Change the extension if needed
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    });
+  };
+
   return (
     <div className="App">
       <input type="file" onChange={handleFileUpload} />
@@ -136,6 +147,9 @@ function MultiTrimVideo() {
           </video>
           <br />
           <button onClick={handleTrim}>Trim Video</button>
+          <button onClick={handleDownload} disabled={videoTrimmedUrls.length === 0}>
+            Download All Segments
+          </button>
           <br />
           <div>
             {videoTrimmedUrls.map((url, index) => (
