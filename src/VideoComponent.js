@@ -1,10 +1,11 @@
 import React, { useEffect, useRef, useState } from 'react';
+import JSZip from 'jszip';
+import { saveAs } from 'file-saver'; // Ensure you have this package installed
 import './App.css';
-
 let ffmpeg; // Store the ffmpeg instance
 function MultiTrimVideo() {
   const [videoDuration, setVideoDuration] = useState(0);
-  const [intervalDuration, setIntervalDuration] = useState(60); // Default interval is 60 seconds
+  const [intervalDuration, setIntervalDuration] = useState(60);
   const [videoSrc, setVideoSrc] = useState('');
   const [videoFileValue, setVideoFileValue] = useState('');
   const [isScriptLoaded, setIsScriptLoaded] = useState(false);
@@ -114,14 +115,21 @@ function MultiTrimVideo() {
     }
   };
 
-  const handleDownload = () => {
-    videoTrimmedUrls.forEach((url, index) => {
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `trimmed_segment_${index + 1}.mp4`; // Change the extension if needed
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
+  const handleDownloadAllAsZip = async () => {
+    const zip = new JSZip();
+
+    // Use Promise.all to ensure all files are processed
+    await Promise.all(
+      videoTrimmedUrls.map(async (url, index) => {
+        const response = await fetch(url);
+        const blob = await response.blob();
+        zip.file(`trimmed_segment_${index + 1}.mp4`, blob);
+      })
+    );
+
+    // Generate the zip file and trigger the download
+    zip.generateAsync({ type: 'blob' }).then((zipFile) => {
+      saveAs(zipFile, 'video_segments.zip');
     });
   };
 
@@ -131,7 +139,6 @@ function MultiTrimVideo() {
       <br />
       <label>
         Interval Duration (seconds): 
-        <br />
         <input
           type="number"
           value={intervalDuration}
@@ -140,15 +147,15 @@ function MultiTrimVideo() {
         />
       </label>
       <br />
-      {videoSrc.length ? (
+      {videoSrc?.length > 0 && (
         <React.Fragment>
           <video src={videoSrc} ref={videoRef} controls>
             <source src={videoSrc} type={videoFileValue.type} />
           </video>
           <br />
           <button onClick={handleTrim}>Trim Video</button>
-          <button onClick={handleDownload} disabled={videoTrimmedUrls.length === 0}>
-            Download All Segments
+          <button onClick={handleDownloadAllAsZip} disabled={videoTrimmedUrls.length === 0}>
+            Download All as Zip
           </button>
           <br />
           <div>
@@ -160,8 +167,6 @@ function MultiTrimVideo() {
             ))}
           </div>
         </React.Fragment>
-      ) : (
-        ''
       )}
     </div>
   );

@@ -163,6 +163,7 @@ h2 {
   background-color: #e6e9ec;
   border-radius: 8px;
   padding: 10px;
+  flex-wrap: wrap;
 }
 
 .tab {
